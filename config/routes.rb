@@ -1,5 +1,9 @@
 ActionController::Routing::Routes.draw do |map|
-  # map.namespace :admin, :member => { :remove => :get } do |admin|
-  #   admin.resources :bookmarks
-  # end
+
+  map.with_options :path_prefix => '/admin/:content_locale' do  |lang|
+    lang.namespace :admin do |admin|
+      admin.resources :bookmarks
+    end
+  end
+
 end

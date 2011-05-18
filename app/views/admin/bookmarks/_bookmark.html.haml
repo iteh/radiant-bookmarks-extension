@@ -1,0 +1,5 @@
+%tr.node
+  %td.layout
+    %span.title= link_to bookmark.send("title_#{Globalize2Extension.content_locale}"), edit_admin_bookmark_path(:id => bookmark), :title => bookmark.title
+
+  %td= bookmark.description

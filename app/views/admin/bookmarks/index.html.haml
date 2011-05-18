@@ -1,0 +1,44 @@
+- content_for 'page_css' do
+  :sass
+    table#bookmarks_index
+      span.label
+        color: #666
+        font-size: 1.2em
+
+      div.nest-padding
+        width: 35px
+        height: 10px
+        float: left
+
+      tr.spacer
+        td
+          background: #EAEAEA
+          height: 3px
+          padding: 0
+    p.new
+      a
+        color: #000
+        border: 1px solid #ddf
+        padding: 6px
+        text-decoration: none
+        &:hover
+          background: #efefff
+.outset
+  - render_region :top do |top|
+    - top.languages do
+      = render :partial => 'top'
+  - render_region :main do |main|
+    - main.list do
+      %table#bookmarks_index.index
+        %thead
+          %tr
+            %th.key= t('bookmarks_extension.bookmark.title')
+            %th.value= t('bookmarks_extension.bookmark.description')
+        %tbody
+          - @bookmarks.each do |bookmark|
+            = render bookmark
+#actions
+  - render_region :bottom do |bottom|
+    - bottom.new_button do
+      %ul
+        %li.new= link_to t('bookmarks_extension.new_bookmark'), new_admin_bookmark_url

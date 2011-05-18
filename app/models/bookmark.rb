@@ -1,5 +1,7 @@
 class Bookmark < ActiveRecord::Base
   translates :title, :description, :content
+  globalize_accessors Globalize2Extension.locales , self.translated_attribute_names
+
   serialize :meta, Hash
 
   def self.sync_from_delicious(username,password,options={})
@@ -13,11 +15,10 @@ class Bookmark < ActiveRecord::Base
 
     ToLang.start(Radiant::Config['bookmarks.google_api_key']) if Radiant::Config['bookmarks.google_api_key']
 
-    Radiant::Config['bookmarks.default_language'] = :en
     WWW::Delicious.new(Radiant::Config['bookmarks.delicious_user'], Radiant::Config['bookmarks.delicious_password'] ) do |delicious|
 
       delicious_default_language = (Radiant::Config['bookmarks.default_language']) ? Radiant::Config['bookmarks.default_language'].to_sym : Radiant::Config['globalize.default_language'].to_sym
-      delicious_translate_to_languages = all_globalize_languages - [delicious_default_language]
+      delicious_translate_to_languages = Globalize2Extension.locales.map(&:to_sym) - [delicious_default_language]
       delicious.posts_all(:fromdt => Date.yesterday).each do |bookmark|
 
         next if Bookmark.find_by_uid(bookmark.uid)
@@ -71,7 +72,4 @@ class Bookmark < ActiveRecord::Base
     end
   end
 
-  def self.all_globalize_languages
-    Radiant::Config['globalize.languages'].split(",").map(&:to_s).concat([Radiant::Config['globalize.default_language'].to_s]).uniq.map(&:to_sym)
-  end
 end

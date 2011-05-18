@@ -1,0 +1,7 @@
+- @stylesheets << 'admin/globalize2'
+
+#globalize.clearfix
+  .index
+    %span
+    - Globalize2Extension.locales.map do |locale|
+      = link_to_unless(Globalize2Extension.content_locale == locale, "<img src='/images/admin/#{locale.downcase}.gif' alt='#{locale.upcase}' />", url_for(:content_locale => locale))
