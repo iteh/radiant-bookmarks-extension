@@ -1,0 +1,34 @@
+- body_classes << 'reversed'
+- content_for 'page_css' do
+  :sass
+    h2.bookmark-name
+      color: #C00
+      font-size: 200%
+      font-family: Georgia,Palatino,"Times New Roman",Times,serif
+      font-weight: normal
+      margin: 25px 0 0
+
+    div.description
+      margin: 5px 20px
+      color: #444
+
+      p
+        margin: 0 0 10px
+
+%h1= @bookmark.send("title_#{Globalize2Extension.content_locale}")
+
+- form_for :bookmark, :url => admin_bookmarks_path(:content_locale => Globalize2Extension.content_locale), :html => { :method => :put } do |f|
+  .form-area
+    %p.title
+      = f.label :title, t('bookmarks_extension.bookmark.title')
+      = f.text_field :title, :class => 'textbox'
+    %p.description
+      = f.label :description, t('bookmarks_extension.bookmark.title')
+      = f.text_area :description, :class => 'textbox'
+
+    %p.buttons
+      = save_model_button(@bookmark)
+      = save_model_and_continue_editing_button(@bookmark)
+      = t('bookmarks_extension.or')
+      = link_to t('bookmarks_extension.cancel'), admin_bookmarks_url(:content_locale => Globalize2Extension.content_locale)
+
