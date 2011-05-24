@@ -1,8 +1,16 @@
 class Bookmark < ActiveRecord::Base
+
+  extend Globalize2::LocalizedContent
+
   translates :title, :description, :content
-  globalize_accessors Globalize2Extension.locales , self.translated_attribute_names
+  localized_content_for *self.translated_attribute_names
 
   serialize :meta, Hash
+
+  named_scope :by_month, lambda { |d| { :conditions  => { :created_at  => d.beginning_of_month..d.end_of_month } } }
+  named_scope :by_week, lambda { |d| { :conditions  => { :created_at  => d.beginning_of_week..d.end_of_week } } }
+  named_scope :by_day, lambda { |d| { :conditions  => { :created_at  => d.beginning_of_day..d.end_of_day } } }
+  named_scope :by_date_range, lambda { |start_date,end_date| { :conditions  => { :created_at  => start_date..end_date } } }
 
   def self.sync_from_delicious(username,password,options={})
 

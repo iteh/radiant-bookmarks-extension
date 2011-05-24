@@ -41,6 +41,8 @@ class BookmarksExtension < Radiant::Extension
 
     admin.bookmarks = load_default_bookmarks_regions
 
+    Page.send :include, BookmarkTags
+
   end
 
   def load_default_bookmarks_regions

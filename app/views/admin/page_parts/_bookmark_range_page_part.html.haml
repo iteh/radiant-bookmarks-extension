@@ -1,0 +1,5 @@
+.row
+  %label{:for => "page[parts_attributes][#{page_part_counter}][content][start_date]"}Date field:
+  = text_field_tag "page[parts_attributes][#{page_part_counter}][content][start_date]", page_part.start_date.try(:strftime, "%B %d, %Y"), :id => "part_#{page_part.name.to_slug}_content-start_date", :class => 'date'
+  %label{:for => "page[parts_attributes][#{page_part_counter}][content][end_date]"}Date field:
+  = text_field_tag "page[parts_attributes][#{page_part_counter}][content][end_date]", page_part.end_date.try(:strftime, "%B %d, %Y"), :id => "part_#{page_part.name.to_slug}_content-end_date", :class => 'date'

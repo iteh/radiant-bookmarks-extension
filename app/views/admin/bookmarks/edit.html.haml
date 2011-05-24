@@ -24,7 +24,16 @@
       = f.text_field :title, :class => 'textbox'
     %p.description
       = f.label :description, t('bookmarks_extension.bookmark.title')
-      = f.text_area :description, :class => 'textbox'
+      = f.text_area :description, :class => 'textarea'
+    %p.content
+      = f.label :content, t('bookmarks_extension.bookmark.content')
+      = f.text_area :content, :class => 'textarea large'
+    %p.orig_title
+      = f.label :orig_title, t('bookmarks_extension.bookmark.orig_title')
+      = f.text_field :orig_title, :class => 'textbox'
+    %p.orig_description
+      = f.label :orig_description, t('bookmarks_extension.bookmark.orig_description')
+      = f.text_field :orig_description, :class => 'textbox'
 
     %p.buttons
       = save_model_button(@bookmark)
