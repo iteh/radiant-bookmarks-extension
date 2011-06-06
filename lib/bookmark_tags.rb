@@ -51,7 +51,7 @@ module BookmarkTags
 
     }
     tag "bookmark:#{method.to_s}" do |tag|
-      tag.locals.bookmark.send(method) #rescue nil
+      tag.locals.bookmark.send(method).strip rescue nil
     end
 
   end
