@@ -50,6 +50,85 @@ namespace :radiant do
           TranslationSupport.write_file(filename, basename, comments, other)
         end
       end
+
+      desc "Generates Entries for Bookmarks"
+      task :generate_bookmark_summery_entries => :environment do
+
+        site = (Site.find(ENV['SITE_ID'] || 1))
+
+        VhostExtension.HOST = site.hostnames.first.domain
+
+        layout = Layout.find_by_name("newspost",:conditions => {:site_id => site.id})
+        bookmark_root = if (ENV['SLUG'])
+                          Page.find_by_slug(ENV['SLUG'], :conditions => {  :site_id => 1})
+                        else
+                          Page.first(:conditions => { :parent_id => nil, :site_id => site.id})
+                        end
+        last_page = Page.first(:conditions => {"page_fields.name" => "generated_bookmarks_page",:site_id => site.id},:order => "published_at DESC", :joins => :fields)
+        last_page_date = last_page ? last_page.published_at : Bookmark.first(:order => "created_at ASC").created_at
+
+        (last_page_date.to_date + 1.day).step(Date.today.to_date,7) do |week|
+
+
+          bookmarks = Bookmark.by_week week
+
+          if bookmarks.empty?
+            puts "KEINE links vom #{week.beginning_of_week} bis #{week.end_of_week}"
+            next
+          end
+
+          this_weeks_tags =bookmarks.map {|bookmark| bookmark.meta[:tags]}.flatten.map{|tag| tag.gsub(/[^[:alnum:]]/, '')}.uniq
+          new_bookmark_page = Page.new_with_defaults
+          new_bookmark_page.site = site
+
+          new_bookmark_page.title = "Links der Woche vom #{week.beginning_of_week} bis #{week.end_of_week}"
+          puts new_bookmark_page.title
+          new_bookmark_page.breadcrumb = new_bookmark_page.title
+          new_bookmark_page.slug = new_bookmark_page.title.parameterize
+          new_bookmark_page.parent_id = bookmark_root.id
+          new_bookmark_page.fields.build(:name => "generated_bookmarks_page",:content => week.to_s)
+          new_bookmark_page.status = Status[:published]
+          new_bookmark_page.update_status
+          new_bookmark_page.published_at = week.end_of_week
+          new_bookmark_page.created_at = week.end_of_week
+          new_bookmark_page.created_by_id = site.users.first.id
+          new_bookmark_page.updated_by_id = site.users.first.id
+          new_bookmark_page.layout = layout
+
+          #weird but otherwise we get the same parts again and again in the loop
+          new_bookmark_page.parts = []
+          extended = new_bookmark_page.parts.build(:name =>"extended" ,:filter_id => "Textile")
+          body = new_bookmark_page.parts.build(:name =>"body",:filter_id => "Textile")
+
+          body.content = "Diese Woche Links zu den Themen #{this_weeks_tags.join(", ")}"
+          # TODO: add when translated h4. <r:title/> <r:description/>
+
+          extended.content = %Q{<r:bookmarks date="#{week.to_s}">
+<r:bookmark>
+h3. <r:orig_title/>
+
+"<r:orig_title/>":<r:url/>
+
+<r:orig_description/>
+<br/>
+</r:bookmark>
+</r:bookmarks>}
+          begin
+          new_bookmark_page.save!
+          body.save!
+          extended.save!
+          new_bookmark_page.update_attributes(:created_by_id => site.users.first.id, :updated_by_id => site.users.first.id)
+            MetaTag.send(:with_scope, :find => { :conditions => {:site_id => site.id}}, :create => {:site_id => site.id }) do
+              new_bookmark_page.meta_tags = this_weeks_tags.join(";")
+            end
+          new_bookmark_page.save!
+          rescue Exception => e
+            puts "not stored tags #{this_weeks_tags.join(";")}, #{e}"
+          end
+
+        end
+      end
+
     end
   end
 end

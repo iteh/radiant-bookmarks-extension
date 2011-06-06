@@ -17,7 +17,7 @@ module BookmarkTags
     <pre><code><r:bookmarks type="" start_date="" end_date="" date=""]/></code></pre>
   }
   tag 'bookmarks' do |tag|
-    bookmarks_type = tag.attr['type'] || "by_month"
+    bookmarks_type = tag.attr['type'] || "by_week"
     start_date = tag.attr['start_date'] ? Date.parse(tag.attr['start_date']) : Date.today
     end_date = tag.attr['end_date'] ? Date.parse(tag.attr['end_date']) : Date.today
     date = tag.attr['date'] ? Date.parse(tag.attr['date']) : Date.today

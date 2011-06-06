@@ -27,12 +27,15 @@ class Bookmark < ActiveRecord::Base
 
       delicious_default_language = (Radiant::Config['bookmarks.default_language']) ? Radiant::Config['bookmarks.default_language'].to_sym : Radiant::Config['globalize.default_language'].to_sym
       delicious_translate_to_languages = Globalize2Extension.locales.map(&:to_sym) - [delicious_default_language]
-      delicious.posts_all(:fromdt => Date.yesterday).each do |bookmark|
+      last_bookmark_from_delicious = Bookmark.find(:last, :order => 'created_at', :conditions => "uid IS NOT NULL").created_at
+
+#      delicious.posts_all(:fromdt => last_bookmark_from_delicious,:todt => last_bookmark_from_delicious + 5.month).each do |bookmark|
+      delicious.posts_all(:fromdt => last_bookmark_from_delicious).each do |bookmark|
 
         next if Bookmark.find_by_uid(bookmark.uid)
-
+        bookmark.url.scheme = "https" if bookmark.url.host =~ /github/
         text_content = nil
-
+        begin
         if Radiant::Config['bookmarks.read_it_later_api_key']
           read_it_later = HTTParty.get("https://text.readitlaterlist.com/v2/text",
                                      :query => {
@@ -43,9 +46,20 @@ class Bookmark < ActiveRecord::Base
             text_content = read_it_later.body
           end
         end
+        rescue Exception => e
+          puts "no text from readit for #{bookmark.url}, #{e}"
+        end
 
         meta = {:tags => bookmark.tags}
-        html = open(bookmark.url.to_s).read
+        html = ""
+        begin
+          html = open(bookmark.url.to_s).read
+        rescue Exception => e
+          puts "no noko parsing for #{bookmark.url}, #{e}"
+          next
+        end
+
+        begin
         doc = Nokogiri::HTML(html)
         doc.xpath("//meta").each { |element|
           meta[element.attributes["name"].value] = element.attributes["content"].value if element.attributes["name"]
@@ -55,10 +69,13 @@ class Bookmark < ActiveRecord::Base
         rss_feeds = doc.xpath("//link").select{ |link|
           link.attributes["type"] && link.attributes["type"].value =~ /(atom|rss)/
         }.map { |link|
-          link.attributes["href"].value =~ /^http.*/ ? link.attributes["href"].value : File.join(url,link.attributes["href"].value)
+          link.attributes["href"].value =~ /^http.*/ ? link.attributes["href"].value : File.join("#{bookmark.url.scheme}://#{bookmark.url.host}",link.attributes["href"].value)
         }
         meta[:rss_feeds] = rss_feeds
 
+        rescue  Exception => e
+          puts "no noko parsing for #{bookmark.url} , #{e}"
+        end
         I18n.locale = delicious_default_language
         current_bookmark = self.create :title => bookmark.title,
                                        :url => bookmark.url.to_s,
@@ -67,14 +84,19 @@ class Bookmark < ActiveRecord::Base
                                        :orig_title => doc.xpath("//title").text,
                                        :orig_description => meta['description'],
                                        :content => text_content,
-                                       :meta => meta
+                                       :meta => meta,
+                                       :created_at => bookmark.time
 
 
         delicious_translate_to_languages.each do |lang|
+          begin
           I18n.locale = lang
           current_bookmark.title = bookmark.title.translate(lang.to_s, :from => delicious_default_language.to_s)
           current_bookmark.description = bookmark.notes.translate(lang.to_s, :from => delicious_default_language.to_s)
           current_bookmark.save!
+          rescue Exception => e
+            puts "no translation for #{bookmark.url}, #{e}"
+          end
         end if Radiant::Config['bookmarks.google_api_key']
       end
     end
